@@ -31,7 +31,9 @@ fi
 ## buld the cellxgene and install -----------
 
 ## obtain a clean version cellxgene a specific version by sha key
+echo "Remove previously installed cellxgene..."
 rm -rf cellxgene
+echo "... done"
 git clone https://github.com/chanzuckerberg/cellxgene.git
 cd cellxgene
 #git checkout bedbc87ed6178cd00a586feac3e99d4912d1c74e # v 0.16.7  # 735eb11eb78b5e6c35ba84438970d0ce369604e1 (v0.15.0)

@@ -324,11 +324,11 @@ def distributeTask(aTask):
     'GSP':GSP,
     'plotBW':plotBW,
     'checkCosMx':getCosMx,
-    'plotCOSMX':plotCosMx
+      'plotCOSMX':plotCosMx,
   }.get(aTask,errorTask)
 
 def HELLO(data):
-  return 'Hi, connected.'
+  return Msg("Hello World!")
 
 def iostreamFig(fig):
   #getLock(iosLock)
