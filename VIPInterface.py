@@ -307,7 +307,7 @@ def distributeTask(aTask):
     'DENS2D':DENS2D,
     'SANK':SANK,
     'STACBAR':STACBAR,
-    'HELLO':HELLO,
+    'GD2':GD2,
     'CLI':CLI,
     'preDEGname':getPreDEGname,
     'preDEGvolcano':getPreDEGvolcano,
@@ -327,20 +327,58 @@ def distributeTask(aTask):
       'plotCOSMX':plotCosMx,
   }.get(aTask,errorTask)
 
-def HELLO(data):
-  return Msg("Hello World!")
+def GD2(data):
+  adata = None;
+  for one in data['cells'].keys():
+    #sT = time.time()
+    oneD = data.copy()
+    oneD.update({'cells':data['cells'][one],
+            'genes':[],
+            'grp':[]})
+    D = createData(oneD)
+    #ppr.pprint("one grp aquire data cost %f seconds" % (time.time()-sT))
+    D.obs['cellGrp'] = one
+    if adata is None:
+      adata = D
+    else:
+      #sT =time.time()
+      adata = adata.concatenate(D)
+      #ppr.pprint("Concatenate data cost %f seconds" % (time.time()-sT))
+  if adata is None:
+    return Msg("No cells were satisfied the condition!")
+
+  ##
+  adata.obs.astype('category')
+  cutOff = 'geneN_cutoff'+data['cutoff']
+  #sT = time.time()
+  #adata.obs[cutOff] = adata.to_df().apply(lambda x: sum(x>float(data['cutoff'])),axis=1)
+  #ppr.pprint(time.time()-sT)
+  #sT = time.time()
+  #df = adata.to_df()
+  #adata.obs[cutOff] = df[df>float(data['cutoff'])].count(axis=1)
+  #ppr.pprint(time.time()-sT)
+  sT = time.time()
+  adata.obs[cutOff] = (adata.X >float(data['cutoff'])).sum(1)
+  ppr.pprint(time.time()-sT)
+  ##
+  w = 3
+  if len(data['cells'])>1:
+    w += 3
+  fig = plt.figure(figsize=[w,4])
+  sc.pl.violin(adata,cutOff,groupby='cellGrp',ax=fig.gca(),show=False,rotation=0,size=2)
+  return iostreamFig(fig)
 
 def iostreamFig(fig):
-  #getLock(iosLock)
+  getLock(iosLock)
   figD = BytesIO()
-  #ppr.pprint('io located at %d'%int(str(figD).split(" ")[3].replace(">",""),0))
+  ppr.pprint('io located at %d'%int(str(figD).split(" ")[3].replace(">",""),0))
   fig.savefig(figD,bbox_inches="tight")
-  #ppr.pprint(sys.getsizeof(figD))
-  #ppr.pprint('io located at %d'%int(str(figD).split(" ")[3].replace(">",""),0))
+  ppr.pprint(sys.getsizeof(figD))
+  ppr.pprint('io located at %d'%int(str(figD).split(" ")[3].replace(">",""),0))
   imgD = base64.encodebytes(figD.getvalue()).decode("utf-8")
   figD.close()
-  #ppr.pprint("saved Fig")
-  #freeLock(iosLock)
+  ppr.pprint("saved Fig")
+  freeLock(iosLock)
   if 'matplotlib' in str(type(fig)):
     plt.close(fig)#'all'
   return imgD

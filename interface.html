@@ -569,9 +569,9 @@
       <button class="tablinks" onclick="selFun(event, 'DUAL')">Dual Genes</button>
       <button class="tablinks" onclick="selFun(event, 'SANK')">Sankey Diagram</button>
       <button class="tablinks" onclick="selFun(event, 'STACBAR')">Stacked Barplot</button>
-      <button id="HELLO" class="tablinks" onclick="selFun(event, 'HELLO')">Hello World!</button>
       <button class="tablinks" onclick="selFun(event, 'GSP')">Gene Specificity</button>
       <button class="tablinks" onclick="selFun(event, 'GD')">Gene Detected</button>
+      <button class="tablinks" onclick="selFun(event, 'GD2')">Gene Detected 2</button>
       <button class="tablinks" onclick="selFun(event, 'DEG');defaultTopSel('DEGtop','DEGtopBT1')">DEG</button>
       <button id="preDEGpanelBT" class="tablinks" onclick="selFun(event, 'preDEGpanel');defaultTopSel('DEG','DEGlinksPlot')" style="display: none;">Pre-Computed DEG</button>
       <button class="tablinks" onclick="selFun(event, 'MARK')">Marker Genes</button>
@@ -676,6 +676,25 @@
       <div id="GDresize" style="height: 'auto'; padding: 0.5em; border: 1px solid #B6B6B6">
         <p id="GDfig"></p></div>
     </div><!--GD-->
+
+    <div id="GD2" class="tabcontent" >
+        <div id="GDinput">
+        <h3>Genes detected in cell selections <a href="https://interactivereport.github.io/cellxgene_VIP/tutorial/docs/how-to-use-cellxgene-vip.html#vip-gene-detected" target="_blank"><i class="fa fa-question-circle" style="font-size:20px"></i></a></h3>
+        <p>In selection 1 (<span class="cellN1" style="color:red;">0</span>) cells and selection 2 (<span class="cellN2" style="color:red;">0</span>) cells</p>
+        <p>Expression cutoff:
+        <input id="GDcutoff" type="number" step="0.1" value="1"/></p>
+      </div>
+      <button class="GDbt" onclick="GDplot()"><b>Plot</b></button>
+      <button onclick="ZoomIn('GDresize')">Zoom In</button>
+      <button onclick="ZoomOut('GDresize')">Zoom Out</button>
+      <button class="GDpngBT" onclick="saveImg('GDimg')" disabled>Save</button>
+      <button onclick="hideShow($('#GDinput'),$(this));">Hide Input</button>
+      <pre id="GDnote" style="color:red;"></pre>
+      <div id="GDspin" class="loading style-2" style="visibility: hidden;"><div class="loading-wheel"></div></div>
+      <div id="GDresize" style="height: 'auto'; padding: 0.5em; border: 1px solid #B6B6B6">
+        <p id="GDfig"></p></div>
+    </div>
+
 
     <div id="MARK" class="tabcontent">
       <div id="MARKinput">
@@ -2514,7 +2533,10 @@ function init(){
       $.ajax({
         type: "POST",
         url: tryurls[i],
-        data:JSON.stringify({'method':"HELLO",'dataset': window.store.getState().config.displayNames.dataset+'.h5ad'}),
+        data:JSON.stringify({'method':"HELLO",
+                             'dataset': window.store.getState().config.displayNames.dataset+'.h5ad',
+        }
+        ),
         contentType: 'application/json;charset=UTF-8',
         success: function(res, status, req){
           console.log(res + " url: "+this.url);
