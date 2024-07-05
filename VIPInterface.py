@@ -328,34 +328,26 @@ def distributeTask(aTask):
   }.get(aTask,errorTask)
 
 def LI(data):
-  adata = None;
-  for one in data['cells'].keys():
-    oneD = data.copy()
-    oneD.update({'cells':data['cells'][one],
-            'genes':[],
-            'grp':[]})
-    D = createData(oneD)
-    D.obs['cellGrp'] = one
-    if adata is None:
-      adata = D
-    else:
-      adata = adata.concatenate(D)
-  if adata is None:
-    return Msg("No cells were satisfied the condition!")
-
-  return Msg(str(adata))
+  # characters of category names, gene number
+  #ppr.pprint("SGV: creating data ...")
+  adata = createData(data)
+  #ppr.pprint("SGV: data created ...")
+  adata = geneFiltering(adata,data['cutoff'],1)
+  if len(adata)==0:
+    raise ValueError('No cells in the condition!')
+  a = list(set(list(adata.obs[data['grp'][0]])))
+  ncharA = max([len(x) for x in a])
+  w = len(a)/4+1
+  h = ncharA/6+2.5
+  ro = math.acos(10/max([15,ncharA]))/math.pi*180
   ##
-  adata.obs.astype('category')
-  cutOff = 'geneN_cutoff'+data['cutoff']
-  sT = time.time()
-  adata.obs[cutOff] = (adata.X >float(data['cutoff'])).sum(1)
-  ppr.pprint(time.time()-sT)
-  ##
-  w = 3
-  if len(data['cells'])>1:
-    w += 3
-  fig = plt.figure(figsize=[w,4])
-  sc.pl.violin(adata,cutOff,groupby='cellGrp',ax=fig.gca(),show=False,rotation=0,size=2)
+  fig = plt.figure(figsize=[w,h])
+  if data.get('dotsize') is None or float(data['dotsize'])==0:
+    sc.pl.violin(adata,data['genes'],groupby=data['grp'][0],ax=fig.gca(),show=False,stripplot=False)
+  else:
+    sc.pl.violin(adata,data['genes'],groupby=data['grp'][0],ax=fig.gca(),show=False,size=float(data['dotsize']))
+  #sc.pl.violin(adata,data['genes'],groupby=data['grp'][0],ax=fig.gca(),show=False,size=0.5)
+  fig.autofmt_xdate(bottom=0.2,rotation=ro,ha='right')
   return iostreamFig(fig)
 
 def iostreamFig(fig):
