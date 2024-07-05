@@ -330,33 +330,23 @@ def distributeTask(aTask):
 def LI(data):
   adata = None;
   for one in data['cells'].keys():
-    #sT = time.time()
     oneD = data.copy()
     oneD.update({'cells':data['cells'][one],
             'genes':[],
             'grp':[]})
     D = createData(oneD)
-    #ppr.pprint("one grp aquire data cost %f seconds" % (time.time()-sT))
     D.obs['cellGrp'] = one
     if adata is None:
       adata = D
     else:
-      #sT =time.time()
       adata = adata.concatenate(D)
-      #ppr.pprint("Concatenate data cost %f seconds" % (time.time()-sT))
   if adata is None:
     return Msg("No cells were satisfied the condition!")
 
+  return Msg(str(adata))
   ##
   adata.obs.astype('category')
   cutOff = 'geneN_cutoff'+data['cutoff']
-  #sT = time.time()
-  #adata.obs[cutOff] = adata.to_df().apply(lambda x: sum(x>float(data['cutoff'])),axis=1)
-  #ppr.pprint(time.time()-sT)
-  #sT = time.time()
-  #df = adata.to_df()
-  #adata.obs[cutOff] = df[df>float(data['cutoff'])].count(axis=1)
-  #ppr.pprint(time.time()-sT)
   sT = time.time()
   adata.obs[cutOff] = (adata.X >float(data['cutoff'])).sum(1)
   ppr.pprint(time.time()-sT)
