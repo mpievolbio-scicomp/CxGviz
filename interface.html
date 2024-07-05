@@ -571,7 +571,7 @@
       <button class="tablinks" onclick="selFun(event, 'STACBAR')">Stacked Barplot</button>
       <button class="tablinks" onclick="selFun(event, 'GSP')">Gene Specificity</button>
       <button class="tablinks" onclick="selFun(event, 'GD')">Gene Detected</button>
-      <button class="tablinks" onclick="selFun(event, 'GD2')">Gene Detected 2</button>
+      <button class="tablinks" onclick="selFun(event, 'LI')">Linked Image</button>
       <button class="tablinks" onclick="selFun(event, 'DEG');defaultTopSel('DEGtop','DEGtopBT1')">DEG</button>
       <button id="preDEGpanelBT" class="tablinks" onclick="selFun(event, 'preDEGpanel');defaultTopSel('DEG','DEGlinksPlot')" style="display: none;">Pre-Computed DEG</button>
       <button class="tablinks" onclick="selFun(event, 'MARK')">Marker Genes</button>
@@ -677,22 +677,24 @@
         <p id="GDfig"></p></div>
     </div><!--GD-->
 
-    <div id="GD2" class="tabcontent" >
-        <div id="GDinput">
-        <h3>Genes detected in cell selections <a href="https://interactivereport.github.io/cellxgene_VIP/tutorial/docs/how-to-use-cellxgene-vip.html#vip-gene-detected" target="_blank"><i class="fa fa-question-circle" style="font-size:20px"></i></a></h3>
-        <p>In selection 1 (<span class="cellN1" style="color:red;">0</span>) cells and selection 2 (<span class="cellN2" style="color:red;">0</span>) cells</p>
-        <p>Expression cutoff:
-        <input id="GDcutoff" type="number" step="0.1" value="1"/></p>
-      </div>
-      <button class="GDbt" onclick="GDplot()"><b>Plot</b></button>
-      <button onclick="ZoomIn('GDresize')">Zoom In</button>
-      <button onclick="ZoomOut('GDresize')">Zoom Out</button>
-      <button class="GDpngBT" onclick="saveImg('GDimg')" disabled>Save</button>
-      <button onclick="hideShow($('#GDinput'),$(this));">Hide Input</button>
-      <pre id="GDnote" style="color:red;"></pre>
-      <div id="GDspin" class="loading style-2" style="visibility: hidden;"><div class="loading-wheel"></div></div>
-      <div id="GDresize" style="height: 'auto'; padding: 0.5em; border: 1px solid #B6B6B6">
-        <p id="GDfig"></p></div>
+    <div id="LI" class="tabcontent" >
+        <div id="LIinput">
+            <h3>Genes detected in cell selections <a href="https://interactivereport.github.io/cellxgene_VIP/tutorial/docs/how-to-use-cellxgene-vip.html#vip-gene-detected" target="_blank"><i class="fa fa-question-circle" style="font-size:20px"></i></a></h3>
+            <p>In selection 1 (<span class="cellN1" style="color:red;">0</span>) cells and selection 2 (<span class="cellN2" style="color:red;">0</span>) cells</p>
+            <p>Expression cutoff:
+                <input id="LIcutoff" type="number" step="0.1" value="1"/></p>
+        </div>
+        <button class="LIbt" onclick="ImageRender()"><b>Plot</b></button>
+        <button onclick="ZoomIn('LIresize')">Zoom In</button>
+        <button onclick="ZoomOut('LIresize')">Zoom Out</button>
+        <button class="LIpngBT" onclick="saveImg('LIimg')" disabled>Save</button>
+        <button onclick="hideShow($('#LIinput'),$(this));">Hide Input</button>
+        <pre id="LInote" style="color:red;"></pre>
+        <div id="LIspin" class="loading style-2" style="visibility: hidden;"><div class="loading-wheel"></div></div>
+        <div id="LIresize" style="height: 'auto'; padding: 0.5em; border: 1px solid #B6B6B6">
+            <p id="LIfig">
+                <!-- <img src="https://imgs.xkcd.com/comics/real_programmers.png"/> -->
+            </p></div>
     </div>
 
 
@@ -3831,6 +3833,58 @@ function SPATIALoverlay() {
   $('#spatial-transform-layer').attr('transform',trans);
 }
 
+// render image function
+function ImageRender(){
+  var cells = getCells(null,true);
+  if(Object.keys(cells).length==0){
+    $('#LInote').text(VIPCellSelectionMsg);
+    return;
+  }
+
+  if(+$('#LIcutoff').prop('min') > +$("#LIcutoff").val()){
+    $('#LInote').text("The minimal expression level is: "+$('#LIcutoff').prop('min'));
+    return;
+  }
+
+  // Setup the json object to pass to python
+  var D = {'method':'LI',
+            'dataset': window.store.getState().config.displayNames.dataset+'.h5ad',
+            'cells':cells,
+            'cutoff':$("#LIcutoff").val(),
+            'figOpt':window.figOpt};
+
+  $(".LIbt").prop('disabled',true);
+  $(".LIpngBT").prop('disabled',true);
+
+  // Set spinner to visible
+  document.getElementById("LIspin").style.visibility="visible";
+
+  // POST D from above and retrieve image to plot.
+  $.ajax({
+    type:"POST",
+    url: VIPurl,
+    data:JSON.stringify(D),
+    contentType: 'application/json;charset=UTF-8',
+    success: function(res){
+      $(".LIbt").prop("disabled",false);
+      document.getElementById("LIspin").style.visibility="hidden";
+      if(res.startsWith('ERROR')){
+        $('#LInote').text(res);
+        document.getElementById("LIfig").innerHTML = '<img id="LIpng" src="data:image/png;base64," width=100% height="auto"/>';
+        return;
+      }
+      showImg('LIfig',res);
+      $(".LIpngBT").prop('disabled',false);
+    },
+    error: function(request,status,error){
+      $('#LInote').text(request.status+request.responseText);
+      document.getElementById("LIfig").innerHTML = '<img id="LIpng" src="data:image/png;base64," width=100% height="auto"/>';
+      $(".LIbt").prop("disabled",false);
+      document.getElementById("LIspin").style.visibility="hidden";
+    }
+  });
+
+}
 // plot function
 function GDplot(){
   var cells = getCells(null,true);
@@ -3844,14 +3898,20 @@ function GDplot(){
     return;
   }
 
+  // Setup the json object to pass to python
   var D = {'method':'GD',
             'dataset': window.store.getState().config.displayNames.dataset+'.h5ad',
             'cells':cells,
             'cutoff':$("#GDcutoff").val(),
             'figOpt':window.figOpt};
+
   $(".GDbt").prop('disabled',true);
   $(".GDpngBT").prop('disabled',true);
+
+  // Set spinner to visible
   document.getElementById("GDspin").style.visibility="visible";
+
+  // POST D from above and retrieve image to plot.
   $.ajax({
     type:"POST",
     url: VIPurl,

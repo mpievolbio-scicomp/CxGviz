@@ -307,7 +307,7 @@ def distributeTask(aTask):
     'DENS2D':DENS2D,
     'SANK':SANK,
     'STACBAR':STACBAR,
-    'GD2':GD2,
+    'LI':LI,
     'CLI':CLI,
     'preDEGname':getPreDEGname,
     'preDEGvolcano':getPreDEGvolcano,
@@ -327,7 +327,7 @@ def distributeTask(aTask):
       'plotCOSMX':plotCosMx,
   }.get(aTask,errorTask)
 
-def GD2(data):
+def LI(data):
   adata = None;
   for one in data['cells'].keys():
     #sT = time.time()
@@ -369,16 +369,10 @@ def GD2(data):
   return iostreamFig(fig)
 
 def iostreamFig(fig):
-  getLock(iosLock)
   figD = BytesIO()
-  ppr.pprint('io located at %d'%int(str(figD).split(" ")[3].replace(">",""),0))
   fig.savefig(figD,bbox_inches="tight")
-  ppr.pprint(sys.getsizeof(figD))
-  ppr.pprint('io located at %d'%int(str(figD).split(" ")[3].replace(">",""),0))
   imgD = base64.encodebytes(figD.getvalue()).decode("utf-8")
   figD.close()
-  ppr.pprint("saved Fig")
-  freeLock(iosLock)
   if 'matplotlib' in str(type(fig)):
     plt.close(fig)#'all'
   return imgD
