@@ -3917,7 +3917,93 @@ function LIplot(acc){
         hiddenE.target='_blank';
         hiddenE.download='cellxgene.'+window.store.getState().config.displayNames.dataset+'.violinData.csv';
         hiddenE.click();
-      }else{
+      }
+      else{
+        showImg('LIfig',res);
+      }
+      //document.getElementById("LIfig").innerHTML = '<img id="LIpng" src="data:image/png;base64,'+res+'" width=100% height="auto"/>';// height="450" width="450"
+      $(".LIpngBT").prop('disabled',false);
+    },
+    error: function(request,status,error){
+      $('#LInote').text(request.status+request.responseText);
+      document.getElementById("LIfig").innerHTML = '<img id="LIpng" src="data:image/png;base64," width=100% height="auto"/>';// height="450" width="450"
+      $(".LIbt").prop("disabled",false);
+      document.getElementById("LIspin").style.visibility="hidden";
+    }
+  })
+}
+function LIplot_old(acc){
+  $('#LInote').text("");
+  if($("#LIgene").val()==null){
+    $('#LInote').text(VIPGeneSelectionMsg);
+    return;
+  }
+  if($("#LIgrp option:selected").val()=="NA"){
+    $('#LInote').text("Please select a category to plot");
+    return;
+  }
+  var cells=getCells('LIcell');
+
+  console.log(cells);
+  
+  if(cells.length==0){
+    $('#LInote').text(VIPCellSelectionMsg);
+    return;
+  }
+  if(+$("#LIcutoff").val() < +$("#LIcutoff").prop('min')){
+    $('#LInote').text("The minimal expression level is "+$("#LIcutoff").prop('min'));
+    return;
+  }
+  //$('#LInote').text("Plotting on "+cells.length+" selected cells");
+  var grp = [$("#LIgrp").val()];
+  var combGrp = [],combGrpOrder=[];
+  if(grp[0]=="Custom_combine"){
+    grp = Object.keys(window.bioCombine);
+    combGrp = window.bioCombine;
+    combGrpOrder = $("#ABBRdynList").sortable('toArray',{ attribute: 'data-val' });
+  }
+  
+  var D = {'method':'LI',
+            'dataset': window.store.getState().config.displayNames.dataset+'.h5ad',
+            'cells':cells,
+            'genes':[$("#LIgene").val()],
+            'grp':grp,
+            'abb':window.bioAbbr,
+            'cutoff':$("#LIcutoff").val(),
+            'dotsize':$("#LIdotsize").val(),
+            'combine':combGrp,
+            'combineOrder':combGrpOrder,
+            'figOpt':window.figOpt};
+
+  if(acc=='data') D['method']='VIOdata';
+
+  $(".LIbt").prop("disabled",true);
+  $(".LIsaveBT").prop('disabled',true);
+  $(".LIpngBT").prop('disabled',true);
+  document.getElementById("LIspin").style.visibility="visible";
+
+  $.ajax({
+    type:"POST",
+    url: VIPurl,
+    data:JSON.stringify(D),
+    contentType: 'application/json;charset=UTF-8',//
+    success: function(res){
+      $(".LIbt").prop("disabled",false);
+      $(".LIsaveBT").prop('disabled',false);
+      document.getElementById("LIspin").style.visibility="hidden";
+      if(res.startsWith('ERROR')){
+        $('#LInote').text(res);
+        document.getElementById("LIfig").innerHTML = '';
+        return;
+      }
+      if(acc=='data'){
+        var hiddenE = document.createElement('a');
+        hiddenE.href="data:attachment/text,"+encodeURIComponent(res);
+        hiddenE.target='_blank';
+        hiddenE.download='cellxgene.'+window.store.getState().config.displayNames.dataset+'.violinData.csv';
+        hiddenE.click();
+      }
+      else{
         showImg('LIfig',res);
       }
       //document.getElementById("LIfig").innerHTML = '<img id="LIpng" src="data:image/png;base64,'+res+'" width=100% height="auto"/>';// height="450" width="450"

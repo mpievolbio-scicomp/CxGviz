@@ -330,6 +330,99 @@ def distributeTask(aTask):
 def LI(data):
   # characters of category names, gene number
   #ppr.pprint("SGV: creating data ...")
+  # Get selected genes.
+  gene_names = data.get('genes', None)
+  if gene_names is None:
+      return Msg("Please select at least one gene.")
+
+  session = requests.Session()
+  ome_api_url = 'http://ome.evolbio.mpg.de/api/v0/'
+
+
+  r = session.get(ome_api_url)
+  # which lists a bunch of urls as starting points
+  urls = r.json()
+  servers_url = urls['url:servers']
+  login_url = urls['url:login']
+  projects_url = urls['url:projects']
+  save_url = urls['url:save']
+  schema_url = urls['url:schema']
+  
+  breakpoint()
+  # To login we need to get CSRF token from cookie
+  token_url = urls['url:token']
+  # we need to trigger the creation of csrf token with this URL
+  session.get(token_url)
+  # but the token we want is accessed as a cookie
+  return Msg(session.cookies.get_dict().keys())
+  token = session.cookies.get_dict().get("csrftoken")
+  return Msg(token)
+
+  # We add this to our session header
+  # Needed for all POST, PUT, DELETE requests
+  session.headers.update({'X-CSRFToken': token,
+                          'Referer': login_url})
+  
+  # List the servers available to connect to
+  servers = session.get(servers_url).json()['data']
+  print('Servers:')
+  for s in servers:
+      print('-id:', s['id'])
+      print(' name:', s['server'])
+      print(' host:', s['host'])
+      print(' port:', s['port'])
+  # find one called SERVER_NAME
+  servers = [s for s in servers if s['server'] == SERVER_NAME]
+  if len(servers) < 1:
+      raise Exception("Found no server called '%s'" % SERVER_NAME)
+  server = servers[0]
+  
+  # Login with username, password and token
+  payload = {'username': USERNAME,
+             'password': PASSWORD,
+             # 'csrfmiddlewaretoken': token,  # Using CSRFToken in header instead
+             'server': server['id']}
+  
+  r = session.post(login_url, data=payload)
+  login_rsp = r.json()
+  assert r.status_code == 200
+  assert login_rsp['success']
+  eventContext = login_rsp['eventContext']
+  print('eventContext', eventContext)
+  # Can get our 'default' group
+  groupId = eventContext['groupId']
+  
+  # With successful login, request.session will contain
+  # OMERO session details and reconnect to OMERO on
+  # each subsequent call...
+  
+  # List projects:
+  # Limit number of projects per page
+  payload = {'limit': 2}
+  data = session.get(projects_url, params=payload).json()
+  assert len(data['data']) < 3
+  print("Projects:")
+  for p in data['data']:
+      print('  ', p['@id'], p['Name'])
+
+  csrf_token = response.json()['data']
+
+  post_data = {'server': 1,
+               'username': 'grotec',
+               'password': '1VfstUZ1CN',
+               'csrfmiddlewaretoken': csrf_token}
+  session = requests.post(url='http://ome.evolbio.mpg.de/api/v0/login/',
+                           data=post_data,
+                           )
+
+  return Msg(session)
+  
+
+  # Establish connection or reuse if exists
+
+  # For select genes, create 3D FPBI viewer tab in browser
+
+  # 
   adata = createData(data)
   #ppr.pprint("SGV: data created ...")
   adata = geneFiltering(adata,data['cutoff'],1)
