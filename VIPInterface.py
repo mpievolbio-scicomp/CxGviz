@@ -1,9 +1,12 @@
 import requests
+from omero.gateway import BlitzGateway as blitz
+from PIL import Image
 import json
 import traceback
 import sqlite3
 #import server.app.decode_fbs as decode_fbs
 import scanpy as sc
+from flask import jsonify
 import anndata as ad
 import pandas as pd
 import numpy as np
@@ -335,113 +338,30 @@ def LI(data):
   if gene_names is None:
       return Msg("Please select at least one gene.")
 
-  session = requests.Session()
-  ome_api_url = 'http://ome.evolbio.mpg.de/api/v0/'
+  ome = blitz('grotec', '1VfstUZ1CN', host='ome.evolbio.mpg.de', port=4064)
+  assert ome.connect()
 
+  # Get tag-image link object ids from omero.
+  tag_image_links = ome.getAnnotationLinks("Image", ann_ids=(tag.id for tag in ome.getObjects("TagAnnotation", attributes={"textValue": gene_names[0]})))
 
-  r = session.get(ome_api_url)
-  # which lists a bunch of urls as starting points
-  urls = r.json()
-  servers_url = urls['url:servers']
-  login_url = urls['url:login']
-  projects_url = urls['url:projects']
-  save_url = urls['url:save']
-  schema_url = urls['url:schema']
-  
-  breakpoint()
-  # To login we need to get CSRF token from cookie
-  token_url = urls['url:token']
-  # we need to trigger the creation of csrf token with this URL
-  session.get(token_url)
-  # but the token we want is accessed as a cookie
-  return Msg(session.cookies.get_dict().keys())
-  token = session.cookies.get_dict().get("csrftoken")
-  return Msg(token)
+  # Get tagged image ids
+  tagged_image_ids = [til.getParent().id for til in tag_image_links]
+  for p in tagged_image_ids:
+      print(p)
 
-  # We add this to our session header
-  # Needed for all POST, PUT, DELETE requests
-  session.headers.update({'X-CSRFToken': token,
-                          'Referer': login_url})
-  
-  # List the servers available to connect to
-  servers = session.get(servers_url).json()['data']
-  print('Servers:')
-  for s in servers:
-      print('-id:', s['id'])
-      print(' name:', s['server'])
-      print(' host:', s['host'])
-      print(' port:', s['port'])
-  # find one called SERVER_NAME
-  servers = [s for s in servers if s['server'] == SERVER_NAME]
-  if len(servers) < 1:
-      raise Exception("Found no server called '%s'" % SERVER_NAME)
-  server = servers[0]
-  
-  # Login with username, password and token
-  payload = {'username': USERNAME,
-             'password': PASSWORD,
-             # 'csrfmiddlewaretoken': token,  # Using CSRFToken in header instead
-             'server': server['id']}
-  
-  r = session.post(login_url, data=payload)
-  login_rsp = r.json()
-  assert r.status_code == 200
-  assert login_rsp['success']
-  eventContext = login_rsp['eventContext']
-  print('eventContext', eventContext)
-  # Can get our 'default' group
-  groupId = eventContext['groupId']
-  
-  # With successful login, request.session will contain
-  # OMERO session details and reconnect to OMERO on
-  # each subsequent call...
-  
-  # List projects:
-  # Limit number of projects per page
-  payload = {'limit': 2}
-  data = session.get(projects_url, params=payload).json()
-  assert len(data['data']) < 3
-  print("Projects:")
-  for p in data['data']:
-      print('  ', p['@id'], p['Name'])
+  # return "</br>".join([str(tid) for tid in tagged_image_ids])
+  # not working (safety catch) return '<iframe src=http://ome.evolbio.mpg.de/fpbioimage/viewer/8100413/>'
+  # This works:
+  return '<a href="http://ome.evolbio.mpg.de/webclient/search?search_query=tag:{}" target="_blank">OME</a>'.format(gene_names[0])
 
-  csrf_token = response.json()['data']
+  # Get thumbnails
+  for p in tagged_image_ids:
+      image = ome.getObject("Image", p).getThumbnail()
 
-  post_data = {'server': 1,
-               'username': 'grotec',
-               'password': '1VfstUZ1CN',
-               'csrfmiddlewaretoken': csrf_token}
-  session = requests.post(url='http://ome.evolbio.mpg.de/api/v0/login/',
-                           data=post_data,
-                           )
+      # return jsonify({'LIfig':base64.encodebytes(image).decode()})
+      return base64.encodebytes(image).decode('utf-8')
 
-  return Msg(session)
-  
-
-  # Establish connection or reuse if exists
-
-  # For select genes, create 3D FPBI viewer tab in browser
-
-  # 
-  adata = createData(data)
-  #ppr.pprint("SGV: data created ...")
-  adata = geneFiltering(adata,data['cutoff'],1)
-  if len(adata)==0:
-    raise ValueError('No cells in the condition!')
-  a = list(set(list(adata.obs[data['grp'][0]])))
-  ncharA = max([len(x) for x in a])
-  w = len(a)/4+1
-  h = ncharA/6+2.5
-  ro = math.acos(10/max([15,ncharA]))/math.pi*180
-  ##
-  fig = plt.figure(figsize=[w,h])
-  if data.get('dotsize') is None or float(data['dotsize'])==0:
-    sc.pl.violin(adata,data['genes'],groupby=data['grp'][0],ax=fig.gca(),show=False,stripplot=False)
-  else:
-    sc.pl.violin(adata,data['genes'],groupby=data['grp'][0],ax=fig.gca(),show=False,size=float(data['dotsize']))
-  #sc.pl.violin(adata,data['genes'],groupby=data['grp'][0],ax=fig.gca(),show=False,size=0.5)
-  fig.autofmt_xdate(bottom=0.2,rotation=ro,ha='right')
-  return iostreamFig(fig)
+  return Msg("\n".join())
 
 def iostreamFig(fig):
   figD = BytesIO()
