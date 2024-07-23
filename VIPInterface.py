@@ -352,7 +352,7 @@ def LI(data):
   # return "</br>".join([str(tid) for tid in tagged_image_ids])
   # not working (safety catch) return '<iframe src=http://ome.evolbio.mpg.de/fpbioimage/viewer/8100413/>'
   # This works:
-  return '<a href="http://ome.evolbio.mpg.de/webclient/search?search_query=tag:{}" target="_blank">OME</a>'.format(gene_names[0])
+  return '<a href="http://ome.evolbio.mpg.de/webclient/search?search_query=tag:{0:s}" target="_blank">Image data for {0:s}</a>'.format(gene_names[0])
 
   # Get thumbnails
   # for p in tagged_image_ids:
