@@ -337,12 +337,12 @@ def distributeTask(aTask):
 def LI(data):
     """LinkedImage plugin: Links to a search results page in omero that lists all objects tagged with the name of genes selected in cellxgene interface."""
 
-  # Get selected genes.
-  gene_names = data.get('genes', None)
-  if gene_names is None:
-      return Msg("Please select at least one gene.")
+    # Get selected genes.
+    gene_names = data.get('genes', None)
+    if gene_names is None:
+        return Msg("Please select at least one gene.")
 
-  return '<a href="http://ome.evolbio.mpg.de/webclient/search?search_query=tag:{0:s}" target="_blank">Image data for {0:s}</a>'.format(gene_names[0])
+    return '<a href="http://ome.evolbio.mpg.de/webclient/search?search_query=tag:{0:s}" target="_blank">Image data for {0:s}</a>'.format(gene_names[0])
 
 def iostreamFig(fig):
   figD = BytesIO()
