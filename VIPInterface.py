@@ -335,35 +335,14 @@ def distributeTask(aTask):
   }.get(aTask,errorTask)
 
 def LI(data):
-  # characters of category names, gene number
-  #ppr.pprint("SGV: creating data ...")
+    """LinkedImage plugin: Links to a search results page in omero that lists all objects tagged with the name of genes selected in cellxgene interface."""
+
   # Get selected genes.
   gene_names = data.get('genes', None)
   if gene_names is None:
       return Msg("Please select at least one gene.")
 
-  # ome = blitz('grotec', '1VfstUZ1CN', host='ome.evolbio.mpg.de', port=4064)
-  # assert ome.connect()
-
-  # # Get tag-image link object ids from omero.
-  # tag_image_links = ome.getAnnotationLinks("Image", ann_ids=(tag.id for tag in ome.getObjects("TagAnnotation", attributes={"textValue": gene_names[0]})))
-
-  # # Get tagged image ids
-  # tagged_image_ids = [til.getParent().id for til in tag_image_links]
-  # for p in tagged_image_ids:
-  #     print(p)
-
-  # return "</br>".join([str(tid) for tid in tagged_image_ids])
-  # not working (safety catch) return '<iframe src=http://ome.evolbio.mpg.de/fpbioimage/viewer/8100413/>'
-  # This works:
   return '<a href="http://ome.evolbio.mpg.de/webclient/search?search_query=tag:{0:s}" target="_blank">Image data for {0:s}</a>'.format(gene_names[0])
-
-  # Get thumbnails
-  # for p in tagged_image_ids:
-  #     image = ome.getObject("Image", p).getThumbnail()
-
-  #     # return jsonify({'LIfig':base64.encodebytes(image).decode()})
-  #     return base64.encodebytes(image).decode('utf-8')
 
 def iostreamFig(fig):
   figD = BytesIO()
