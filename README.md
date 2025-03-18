@@ -21,7 +21,11 @@ their selective expression and validates the scRNAseq approach and visualization
 Interface (CLI)** exposed by mini Jupyter Notebook to provide maximal flexibility of doing various analytics on the
 whole or sliced single cell dataset.
 
-## Demo site: https://cellxgenevip-ms.bxgenomics.com , https://cellxgenevip-spatial.bxgenomics.com, and https://cellxgenevip-multiome.bxgenomics.com
+## Demo site: 
+#### Multiple Sclerosis (Nature 2019): https://cellxgenevip-ms.bxgenomics.com
+#### 10X visium: https://cellxgenevip-spatial.bxgenomics.com
+#### 10X multiome: https://cellxgenevip-multiome.bxgenomics.com
+#### nanoString cosMx: https://cellxgenevip-cosmx.bxgenomics.com/
 
 ## Online tutorial: https://interactivereport.github.io/cellxgene_VIP/tutorial/docs
 
@@ -38,6 +42,10 @@ bash ~/Downloads/Anaconda3-2020.02-Linux-x86_64.sh
 
 ## 2. One step installation for VIPlight (without CLI, Command Line Interface for programming)
 Clone the repo to your local,
+```
+git clone https://github.com/interactivereport/cellxgene_VIP.git
+cd cellxgene_VIP
+```
 - For Linux users
 ```
 ./install_VIPlight.sh
