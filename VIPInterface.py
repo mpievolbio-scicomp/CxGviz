@@ -1,5 +1,4 @@
 import requests
-from omero.gateway import BlitzGateway as blitz
 from PIL import Image
 import json
 import traceback
