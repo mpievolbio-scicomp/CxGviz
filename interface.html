@@ -571,6 +571,7 @@
       <button class="tablinks" onclick="selFun(event, 'STACBAR')">Stacked Barplot</button>
       <button class="tablinks" onclick="selFun(event, 'GSP')">Gene Specificity</button>
       <button class="tablinks" onclick="selFun(event, 'GD')">Gene Detected</button>
+      <button class="tablinks" onclick="selFun(event, 'LI')">Linked Image</button>
       <button class="tablinks" onclick="selFun(event, 'DEG');defaultTopSel('DEGtop','DEGtopBT1')">DEG</button>
       <button id="preDEGpanelBT" class="tablinks" onclick="selFun(event, 'preDEGpanel');defaultTopSel('DEG','DEGlinksPlot')" style="display: none;">Pre-Computed DEG</button>
       <button class="tablinks" onclick="selFun(event, 'MARK')">Marker Genes</button>
@@ -676,6 +677,18 @@
       <div id="GDresize" style="height: 'auto'; padding: 0.5em; border: 1px solid #B6B6B6">
         <p id="GDfig"></p></div>
     </div><!--GD-->
+
+    <div id="LI" class="tabcontent" >
+        <div id="LIinput">
+          <p>Choose a gene ('Add Genes' first): <select id="LIgene" onchange="LIplot('plot')"></select></p>
+        </div>
+        <button class="LIbt" onclick="LIplot('plot')"><b>Get linked images</b></button>
+        <pre id="LInote" style="color:red;"></pre>
+        <div id="LIspin" class="loading style-2" style="visibility: hidden;">
+            <div class="loading-wheel"></div>
+        </div>
+        <div id="LIresize" style="height: 'auto'; padding: 0.5em"><p id="LIfig"></p></div>
+    </div>
 
     <div id="MARK" class="tabcontent">
       <div id="MARKinput">
@@ -2565,7 +2578,10 @@ function init(){
       $.ajax({
         type: "POST",
         url: tryurls[i],
-        data:JSON.stringify({'method':"HELLO",'dataset': window.store.getState().config.displayNames.dataset+'.h5ad'}),
+        data:JSON.stringify({'method':"HELLO",
+                             'dataset': window.store.getState().config.displayNames.dataset+'.h5ad',
+        }
+        ),
         contentType: 'application/json;charset=UTF-8',
         success: function(res, status, req){
           console.log(res + " url: "+this.url);
@@ -2644,6 +2660,7 @@ function sync(){
   ADDGref();
   GDref();
   SGVref();
+  LIref();
   SGVcompareref();
   PGVref();
   PGVcomparref();
@@ -2766,7 +2783,18 @@ function dropGene(aID){
     }
   }
 }
-function SGVref(){
+function LIref(){
+     dropGene("LI");
+     addCustomCombine("LIgrp");
+     //if($('#LIgene').val()) $('#LInote').text('');
+     if($('#LIgene').val() == null){
+         $('#LInote').text('Please add genes either from the VIP menu or the main window');
+     }else if($('#LInote').text().includes("VIP menu")){
+         $('#LInote').text('');
+     }
+}
+
+ function SGVref(){
   dropGene("SGV");
   addCustomCombine("SGVgrp");
   //if($('#SGVgene').val()) $('#SGVnote').text('');
@@ -3866,6 +3894,47 @@ function SPATIALoverlay() {
   $('#spatial-transform-layer').attr('transform',trans);
 }
 
+// render image function
+function LIplot(acc){
+  $('#LInote').text("");
+  if($("#LIgene").val()==null){
+    $('#LInote').text(VIPGeneSelectionMsg);
+    return;
+  }
+  var D = {'method':'LI',
+            'genes':[$("#LIgene").val()],
+ };
+
+  $(".LIbt").prop("disabled",true);
+  document.getElementById("LIspin").style.visibility="visible";
+
+  $.ajax({
+    type:"POST",
+    url: VIPurl,
+    data:JSON.stringify(D),
+    contentType: 'application/json;charset=UTF-8',//
+    success: function(res){
+      $(".LIbt").prop("disabled",false);
+      $(".LIsaveBT").prop('disabled',false);
+      document.getElementById("LIspin").style.visibility="hidden";
+      if(res.startsWith('ERROR')){
+        $('#LInote').text(res);
+        document.getElementById("LIfig").innerHTML = '';
+        return;
+      }
+      else{
+          document.getElementById("LIfig").innerHTML = res 
+      }
+    },
+      error: function(request,status,error){
+          $('#LInote').text(request.status+request.responseText);
+          document.getElementById("LIfig").innerHTML = '<img id="LIpng" src="data:image/png;base64," width=100% height="auto"/>';// height="450" width="450"
+          $(".LIbt").prop("disabled",false);
+          document.getElementById("LIspin").style.visibility="hidden";
+      }
+  })
+ }
+
 // plot function
 function GDplot(){
   var cells = getCells(null,true);
@@ -3879,14 +3948,20 @@ function GDplot(){
     return;
   }
 
+  // Setup the json object to pass to python
   var D = {'method':'GD',
             'dataset': window.store.getState().config.displayNames.dataset+'.h5ad',
             'cells':cells,
             'cutoff':$("#GDcutoff").val(),
             'figOpt':window.figOpt};
+
   $(".GDbt").prop('disabled',true);
   $(".GDpngBT").prop('disabled',true);
+
+  // Set spinner to visible
   document.getElementById("GDspin").style.visibility="visible";
+
+  // POST D from above and retrieve image to plot.
   $.ajax({
     type:"POST",
     url: VIPurl,
@@ -4013,7 +4088,7 @@ function SGVplot(acc){
     $('#SGVnote').text("Please select a category to plot");
     return;
   }
-  var cells=getCells('SGVcell');
+     var cells=getCells('SGVcell');
   if(cells.length==0){
     $('#SGVnote').text(VIPCellSelectionMsg);
     return;

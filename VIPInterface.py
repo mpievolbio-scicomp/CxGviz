@@ -1,9 +1,11 @@
 import requests
+from PIL import Image
 import json
 import traceback
 import sqlite3
 #import server.app.decode_fbs as decode_fbs
 import scanpy as sc
+from flask import jsonify
 import anndata as ad
 import pandas as pd
 import numpy as np
@@ -309,7 +311,7 @@ def distributeTask(aTask):
     'DENS2D':DENS2D,
     'SANK':SANK,
     'STACBAR':STACBAR,
-    'HELLO':HELLO,
+    'LI':LI,
     'CLI':CLI,
     'preDEGname':getPreDEGname,
     'preDEGvolcano':getPreDEGvolcano,
@@ -331,20 +333,21 @@ def distributeTask(aTask):
     'plotVisium':plotVisium
   }.get(aTask,errorTask)
 
-def HELLO(data):
-  return 'Hi, connected.'
+def LI(data):
+    """LinkedImage plugin: Links to a search results page in omero that lists all objects tagged with the name of genes selected in cellxgene interface."""
+
+    # Get selected genes.
+    gene_names = data.get('genes', None)
+    if gene_names is None:
+        return Msg("Please select at least one gene.")
+
+    return '<a href="http://ome.evolbio.mpg.de/webclient/search?search_query=tag:{0:s}" target="_blank">Image data for {0:s}</a>'.format(gene_names[0])
 
 def iostreamFig(fig):
-  #getLock(iosLock)
   figD = BytesIO()
-  #ppr.pprint('io located at %d'%int(str(figD).split(" ")[3].replace(">",""),0))
   fig.savefig(figD,bbox_inches="tight")
-  #ppr.pprint(sys.getsizeof(figD))
-  #ppr.pprint('io located at %d'%int(str(figD).split(" ")[3].replace(">",""),0))
   imgD = base64.encodebytes(figD.getvalue()).decode("utf-8")
   figD.close()
-  #ppr.pprint("saved Fig")
-  #freeLock(iosLock)
   if 'matplotlib' in str(type(fig)):
     plt.close(fig)#'all'
   return imgD
