@@ -341,7 +341,7 @@ def LI(data):
     if gene_names is None:
         return Msg("Please select at least one gene.")
 
-    return '<a href="https://evolomero.evolbio.mpg.de/webclient/search?search_query=tag:{0:s}" target="_blank">Image data for {0:s}</a>'.format(gene_names[0])
+    return '<a href="https://evolomero.evolbio.mpg.de/webclient/search?search_query={0:s}" target="_blank">Browse images</a>'.format("%20AND%20".join(["Gene:"+gn for gn in gene_names]))
 
 def iostreamFig(fig):
   figD = BytesIO()
