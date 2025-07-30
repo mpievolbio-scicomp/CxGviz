@@ -342,7 +342,7 @@ def LI(data):
         return Msg("Please select at least one gene.")
 
     # return '<a href="https://evolomero.evolbio.mpg.de/webclient/search?search_query={0:s}" target="_blank">Browse images</a>'.format("%20AND%20".join(["Gene:"+gn for gn in gene_names]))
-    return '<iframe src="https://evolomero.evolbio.mpg.de/webclient/search?search_query={0:s}" id="omeroviewport" name="omeroviewport"></iframe>'.format("%20AND%20".join(["Gene:"+gn for gn in gene_names]))
+    return '<iframe src="https://evolomero.evolbio.mpg.de/webclient/search?search_query={0:s}" id="omeroviewport" name="omeroviewport" width=100%></iframe>'.format("%20AND%20".join(["Gene:"+gn for gn in gene_names]))
 
 def iostreamFig(fig):
   figD = BytesIO()
