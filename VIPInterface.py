@@ -336,6 +336,7 @@ def distributeTask(aTask):
 def LI(data):
     """LinkedImage plugin: Links to a search results page in omero that lists all objects tagged with the name of genes selected in cellxgene interface."""
 
+    return Msg(data.get('genes'), None)
     # Get selected genes.
     gene_names = data.get('genes', None)
     if gene_names is None:
