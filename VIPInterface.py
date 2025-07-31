@@ -341,7 +341,14 @@ def LI(data):
     if gene_names is None:
         return Msg("Please select at least one gene.")
 
-    return '<iframe src="https://evolomero.evolbio.mpg.de/webclient/search?search_query={0:s}" id="omeroviewport" name="omeroviewport" width="100%" height="1000" allowfullscreen=true></iframe>'.format("%20AND%20".join(["Gene:"+gn for gn in gene_names]))
+    data = pd.read_html("http://evolomero.evolbio.mpg.de/webclient/load_searching/form/?query=Gene%3A{0:s}&advanced_search=Gene%3A{0:s}&datatype=images&searchGroup=-1&ownedBy=-1".format("%20AND%20".join(gene_names)),
+                         extract_links="body",
+                         attrs={"id":"dataTable"})
+
+    image_ids = (token[1].split("show=")[-1] for token in data[0].Link)
+    url = "https://evolomero.evolbio.mpg.de/webclient?show="+"|".join(image_ids)
+
+    return f'<iframe src={url} id="omeroviewport" name="omeroviewport" width="100%" height="1000" allowfullscreen=true></iframe>'
 
 def iostreamFig(fig):
   figD = BytesIO()
