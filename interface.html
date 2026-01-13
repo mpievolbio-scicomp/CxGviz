@@ -738,6 +738,7 @@
           </p>
           <p>Choose a gene ('Add Genes' first): <select id="SGVgene"></select></p>
           <p>Expression cutoff for cell filtering: <input id="SGVcutoff" type="number" step="0.1" value="1" min="0"/></p>
+          <p></p>Dot size for cells: <input type="range" min="0" max="2" value="1" step="0.1" id="SGVdotsize" oninput="this.nextElementSibling.value = this.value"><output>1</output></p>
           <p>Group by:
           <select id="SGVgrp"></select></p>
         </div>
@@ -762,6 +763,7 @@
           <p>Choose a gene ('Add Genes' first): <select id="SGVcomparegene"></select></p>
           <p>Expression cutoff (for cell filtering): <input id="SGVcompareCellcutoff" type="number" step="0.01" value="0.01" min="0"/></p>
           <p>Expression cutoff (for percentage calculation): <input id="SGVcomparecutoff" type="number" step="0.1" value="1" min="0"/></p>
+          <p></p>Dot size for cells: <input type="range" min="0" max="1" value="0.5" step="0.1" id="SGVcomparedotsize" oninput="this.nextElementSibling.value = this.value"><output>0.5</output></p>
           <p>Group by:
           <select id="SGVcompareorder"></select></p>
           <p>Sub-group by:
@@ -1067,7 +1069,8 @@
 
         <pre id="DOTnote" style="color:red;">Note: Unscaled data is used as the visualiztion is hard to interpret for scaled or corrected matrices in which zero counts had been replaced by other values. Scaling option in Global Setting does not apply to Dot plot</pre>
       </div>
-      <button class="DOTbt" onclick="DOTplot()"><b>Plot</b></button>
+      <button class="DOTbt" onclick="DOTplot('plot')"><b>Plot</b></button>
+      <button class="DOTbt" onclick="DOTplot('data')">Get Data</button>
       <button class="DOTbt" onclick="ZoomIn('DOTresize')">Zoom In</button>
       <button class="DOTbt" onclick="ZoomOut('DOTresize')">Zoom Out</button>
       <button class="DOTpngBT" onclick="saveImg('DOTimg')" disabled>Save</button>
@@ -1611,7 +1614,7 @@
         <div id="COSMXfigs"></div>
       </div>
     </div> <!-- COSMX -->
-    
+
     <div id='VISIUM' class='tabcontent'>
       <h3>Visualizing 10X visium data along with histology images</h3>
       <div id='VISIUMinput'>
@@ -2327,7 +2330,7 @@ function enableCOXMX(){
   });
 }
 function enableVISIUM(){
-    $.ajax({
+  $.ajax({
     type: "POST",
     url: VIPurl,
     data:JSON.stringify({'method':"checkVisium",'dataset': window.store.getState().config.displayNames.dataset+'.h5ad'}),
@@ -2337,7 +2340,7 @@ function enableVISIUM(){
       if(VisiumIDs == null || VisiumIDs.length == 0){
           return;
       }
-      //available coxMx samples
+      //available cosMx samples
       var htmlCheck = "";
       for(const s of VisiumIDs){
           htmlCheck += '<label id="VISIUMsampleCK_'+s+'"><input class="VISIUMsamples" type="checkbox" value="'+s+'"/>'+s+'</label>';
@@ -2616,8 +2619,8 @@ function init(){
             // for cosMx availability
             console.log("Checking cosMx ...");
             enableCOXMX();
-            
-            // for cosMx availability
+
+            // for visium availability
             console.log("Checking visium ...");
             enableVISIUM();
 
@@ -3374,15 +3377,18 @@ function COSMXsetGeneColor(){
     }else{
         $(".COSMXgenes").prop("disabled",false);
     }
-    html = "";
-    for(const one of selG){
-        html += "<label>"+one+"<input class='COSMXgeneColors colorInput' id='COSMXgeneColor_"+one+"'";
-        if($("#COSMXgeneColor_"+one).val()!==undefined){
-            html += " value='"+$("#COSMXgeneColor_"+one).val()+"'";
+    
+    if(selG.length>0){
+        html = "";
+        for(const one of selG){
+            html += "<label>"+one+"<input class='COSMXgeneColors colorInput' id='COSMXgeneColor_"+one+"'";
+            if($("#COSMXgeneColor_"+one).val()!==undefined){
+                html += " value='"+$("#COSMXgeneColor_"+one).val()+"'";
+            }
+            html += " type='color'></label>";
         }
-        html += " type='color'></label>";
+        $("#COSMXgeneColor").html(html);
     }
-    $("#COSMXgeneColor").html(html);
 }
 function VISIUMref(){
     showGene('VISIUM');
@@ -4113,6 +4119,7 @@ function SGVplot(acc){
             'grp':grp,
             'abb':window.bioAbbr,
             'cutoff':$("#SGVcutoff").val(),
+            'dotsize':$("#SGVdotsize").val(),
             'combine':combGrp,
             'combineOrder':combGrpOrder,
             'figOpt':window.figOpt};
@@ -4191,10 +4198,10 @@ function SGVcompareplot(){
             'cells':cells,
             'genes':[$("#SGVcomparegene").val()],
             'grp':grp,
+            'dotsize': $("#SGVcomparedotsize").val(),
             'abb':window.bioAbbr,
             'cutoff':$("#SGVcomparecutoff").val(),
             'cellCutoff':$("#SGVcompareCellcutoff").val(),
-            'dotsize':1,
             //'combine':combGrp,
             //'combineOrder':combGrpOrder,
             'figOpt':window.figOpt};
@@ -5152,7 +5159,7 @@ function GSPplot(){
   })
 }
 
-function DOTplot(){
+function DOTplot(acc){
   $('#DOTnote').text("");
   var genes =getGenes('DOT');
   var geneSets = getGeneSet('DOT');
@@ -5202,6 +5209,7 @@ function DOTplot(){
             'legendW':$('#DOTlegendW').val(),
             'color':color,
             'figOpt':window.figOpt};
+  if(acc=='data') D['method']='DOTdata';
   $(".DOTbt").prop('disabled',true);
   document.getElementById("DOTspin").style.visibility="visible";
   $.ajax({
@@ -5217,8 +5225,15 @@ function DOTplot(){
         document.getElementById("DOTfig").innerHTML = '';
         return;
       }
-
-      showImg('DOTfig',res)
+      if(acc=='data'){
+        var hiddenE = document.createElement('a');
+        hiddenE.href="data:attachment/text,"+encodeURIComponent(res);
+        hiddenE.target='_blank';
+        hiddenE.download='cellxgene.'+window.store.getState().config.displayNames.dataset+'.dotData.csv';
+        hiddenE.click();
+      }else{
+        showImg('DOTfig',res);
+      }
       //document.getElementById("DOTfig").innerHTML = '<img id="DOTpng" src="data:image/png;base64,'+res+'" width=100% height="auto"/>';// height="450" width="450"
       $(".DOTpngBT").prop('disabled',false);
     },
@@ -6038,8 +6053,7 @@ function CLIplot(){
         }
         if (line.includes('<\/body>')) readIt = false;
       });
-      // console.log(filteredRes);
-      $("#CLIresize").html(res);
+      $("#CLIresize").html(filteredRes);
 
       var num = 0;
       for (let item of document.getElementsByClassName('output_svg')) {
