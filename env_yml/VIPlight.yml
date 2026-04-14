@@ -3,6 +3,10 @@
 # mamba env update -f VIPlight.yml
 channels:
   - conda-forge
+<<<<<<< Updated upstream
+=======
+  - nodefaults
+>>>>>>> Stashed changes
   - bioconda
 dependencies:
   - scanpy=1.10.1

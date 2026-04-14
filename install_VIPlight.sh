@@ -8,8 +8,8 @@ appEnvPath=$(realpath ${appEnvPath/\~/$HOME})
 
 echo -e "\nInstallation location (first position parameter): $appEnvPath"
 echo -e "Warning: The above env will be removed if it exists!"
-echo "Wait for 10 seconds, use Ctrl+C to terminate"
-for i in {10..1}; do echo -ne "$i\033[0K\r"; sleep 1; done;
+# echo "Wait for 10 seconds, use Ctrl+C to terminate"
+# for i in {10..1}; do echo -ne "$i\033[0K\r"; sleep 1; done;
 
 set -e
 exePath=$(readlink -e $(dirname $0))
@@ -31,7 +31,7 @@ if [[ -f "$appEnvPath/conda-meta/history" ]]; then
     conda env remove -y -p $appEnvPath
 fi
 rm -fr $appEnvPath
-conda create -y -p $appEnvPath -c conda-forge python=3.10.14 mamba=1.5.12 git=2.49.0 jq=1.8.1 nodejs=22.6.0 conda   #nodejs=13.13.0
+mamba create -y -p $appEnvPath -c conda-forge python=3.10.14 git=2.49.0 jq=1.8.1 nodejs=22.6.0
 
 sed "s|CONDA_PATH|$appEnvPath|g" env_yml/VIPlight_versioned.yml > env_yml/VIPlight_local.yml
 if [[ -n "$CONDA_SSL" ]] &&  [[ -f "$CONDA_SSL" ]]; then
@@ -40,17 +40,14 @@ if [[ -n "$CONDA_SSL" ]] &&  [[ -f "$CONDA_SSL" ]]; then
     echo -e "  REQUESTS_CA_BUNDLE: $CONDA_SSL" >> env_yml/VIPlight_local.yml
     echo -e "  SSL_CERT_FILE: $CONDA_SSL" >> env_yml/VIPlight_local.yml
 fi
-source $appEnvPath/etc/profile.d/conda.sh
-conda activate
+conda activate VIP
 which python
 
-conda install -y -c conda-forge -c bioconda flask==3.1.0 flask-cors==5.0.1 flask-restful==0.3.10 flask-talisman==1.1.0 werkzeug==3.1.3 anndata==0.11.4 h5py==3.13.0 pandas==2.2.3 numpy==2.0.1 #numpy specified by cellxgene v1.3.0
-#flask==2.2.3 flask-cors==3.0.10 flask-restful==0.3.9 flask-talisman==1.0.0 werkzeug==2.2.3 anndata==0.8.0 h5py==3.8.0 pandas==1.5.3 numpy==1.22.0
+mamba install -y -c conda-forge -c bioconda -c nodefaults flask==3.1.0 flask-cors==5.0.1 flask-restful==0.3.10 flask-talisman==1.1.0 werkzeug==3.1.3 anndata==0.11.4 h5py==3.13.0 pandas==2.2.3 numpy==2.0.1 #numpy specified by cellxgene v1.3.0
 ## config the env with cellxgene
 rm -fr cellxgene
 git clone https://github.com/chanzuckerberg/cellxgene.git
 cd cellxgene
-#git checkout f48d06fb9043771d7370ee9ac0dc9de8ae6ad888 # v1.1.1
 git checkout fd8b47b78ed9f9fa3ac9bb52897597a3e7fa549a #v1.3.0
 
 ## update the client-side source code of cellxgene for VIP
@@ -76,12 +73,13 @@ make install-dist
 cd ..
 
 # install the rest of packages
-which mamba
-mamba env update -f $exePath/env_yml/VIPlight_local.yml
+echo "Installing remaining packages..."
+mamba env update -y -f $exePath/env_yml/VIPlight_local.yml
+echo "Done"
 # setup the env
 $exePath/install_VIPlight_link.sh
 echo "export VIPenv='source $appEnvPath/etc/profile.d/conda.sh;conda activate'" > $exePath/bin/.env
 # setup the VIPlight
 echo -e "#"'!'"/usr/bin/env bash\nsource $exePath/bin/.env\neval \$VIPenv >/dev/null 2>&1\ncellxgene \"\$@\"" > $exePath/VIPlight
 chmod a+x "$exePath/VIPlight"
-echo "Please considering to use '$exePath/VIPlight' as 'cellxgene'"
+echo "Please use '$exePath/VIPlight' as 'cellxgene'"
