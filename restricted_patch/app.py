@@ -62,7 +62,7 @@ def cache_control_always(**cache_kwargs):
     return _cache_control(True, **cache_kwargs)
 
 
-@webbp.route("/", methods=["GET"])
+@webbp.route("/", methods=["GET","POST"])
 def dataset_index():
     app_config = current_app.app_config
 
@@ -273,6 +273,6 @@ class Server:
         self.app.app_config = app_config
 
 from server.app.VIPInterface import route
-@webbp.route("/VIP", methods=["POST"])
+@webbp.route("/VIP", methods=["GET","POST"])
 def VIP():
     return route(request.data,current_app.app_config)
